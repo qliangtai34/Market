@@ -9,9 +9,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SellController;
 
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 | ▼ 未ログインでもアクセス可能
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 */
 
 // 商品一覧（トップページ） + 検索
@@ -30,11 +30,11 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 | ▼ ログイン済み（メール認証前でもアクセス可能）
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware('auth')->group(function () {
 
     // マイリスト（いいねした商品一覧） + 検索対応
     Route::get('/mylist', [ItemController::class, 'mylist'])->name('items.mylist');
@@ -52,9 +52,9 @@ Route::middleware(['auth'])->group(function () {
 });
 
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 | ▼ ログイン済み ＆ メール認証済み
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------- 
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -76,8 +76,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mypage/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/mypage/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // 購入商品一覧・出品商品一覧（クエリ `?page=buy|sell` 切り替え）
-    Route::get('/mypage', [ProfileController::class, 'show'])->name('profile.show');
+    // マイページ（購入・出品商品一覧などのトップ）
+    Route::get('/mypage', [ProfileController::class, 'index'])->name('mypage.index');
 
     // 任意：ダッシュボード画面
     Route::get('/dashboard', function () {

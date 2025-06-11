@@ -29,10 +29,16 @@ class ItemController extends Controller
 
         $items = $query->with('buyers')->latest()->get();
 
+        // ログインユーザーのいいね商品 ID を取得（表示用バッジに使用）
+        $likedItemIds = Auth::check()
+            ? Auth::user()->likes()->pluck('item_id')->toArray()
+            : [];
+
         return view('items.index', [
             'items' => $items,
             'keyword' => $keyword,
             'mode' => 'all',
+            'likedItemIds' => $likedItemIds,
         ]);
     }
 
@@ -45,10 +51,20 @@ class ItemController extends Controller
             return redirect()->route('login');
         }
 
-        $user = Auth::user();
+        $user = Auth::user()->load('likes'); // いいね済商品を事前に読み込む
         $keyword = $request->input('keyword', '');
 
-        $likedItemIds = $user->likes()->pluck('item_id');
+        $likedItemIds = $user->likes->pluck('id')->toArray();
+
+        // 該当する item_id がない場合、空コレクションを返す
+        if (empty($likedItemIds)) {
+            return view('items.index', [
+                'items' => collect(),
+                'keyword' => $keyword,
+                'mode' => 'mylist',
+                'likedItemIds' => [],
+            ]);
+        }
 
         $query = Item::whereIn('id', $likedItemIds);
 
@@ -62,6 +78,7 @@ class ItemController extends Controller
             'items' => $items,
             'keyword' => $keyword,
             'mode' => 'mylist',
+            'likedItemIds' => $likedItemIds,
         ]);
     }
 

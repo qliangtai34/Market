@@ -21,13 +21,29 @@
         @endauth
     </div>
 
+    @auth
+        <div class="mb-3">
+            <a href="{{ route('mypage.index') }}" class="btn btn-outline-primary">
+                マイページへ
+            </a>
+        </div>
+    @endauth
+
     <form method="GET" action="{{ $mode === 'mylist' ? route('items.mylist') : route('items.index') }}" class="mb-4 d-flex flex-wrap gap-2">
-        <input type="text" name="keyword" value="{{ $keyword }}" placeholder="商品名で検索" class="form-control w-100 w-md-50">
+        <input
+            type="text"
+            name="keyword"
+            value="{{ old('keyword', $keyword) }}"
+            placeholder="商品名で検索"
+            class="form-control w-100 w-md-50"
+            autocomplete="off"
+        >
         <button type="submit" class="btn btn-primary">検索</button>
     </form>
 
     @php
-        $likedItemIds = Auth::check() ? Auth::user()->likes->pluck('item_id')->toArray() : [];
+        // 安全のため isset チェック
+        $likedItemIds = $likedItemIds ?? [];
     @endphp
 
     @if ($items->isEmpty())
