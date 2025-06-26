@@ -21,8 +21,16 @@ class Item extends Model
         'description',
         'img_url',
         'condition',
-        'user_id',   // 出品者ID
-        'is_sold',   // 購入済みフラグ（boolean）
+        'user_id',    // 出品者ID
+        'is_sold',    // 購入済みフラグ
+    ];
+
+    /**
+     * 型変換
+     */
+    protected $casts = [
+        'is_sold' => 'boolean',
+        'price' => 'integer',
     ];
 
     /**
@@ -42,12 +50,11 @@ class Item extends Model
     }
 
     /**
-     * likes() メソッド（Laravel標準名でのアクセス対応）
-     * 他の箇所で `$item->likes` と使っている場合のために定義
+     * likes() メソッド（別名アクセス対応）
      */
     public function likes()
     {
-        return $this->belongsToMany(User::class, 'likes')->withTimestamps();
+        return $this->likedUsers();
     }
 
     /**
@@ -63,12 +70,11 @@ class Item extends Model
      */
     public function categories()
     {
-        return $this->belongsToMany(Category::class, 'item_category');
+        return $this->belongsToMany(Category::class, 'item_category')->withTimestamps();
     }
 
     /**
-     * 購入者（多対多）
-     * purchase_items テーブルを使用
+     * 購入者（多対多）purchase_items テーブル経由
      */
     public function buyers()
     {

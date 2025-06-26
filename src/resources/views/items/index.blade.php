@@ -23,9 +23,7 @@
 
     @auth
         <div class="mb-3">
-            <a href="{{ route('mypage.index') }}" class="btn btn-outline-primary">
-                マイページへ
-            </a>
+            <a href="{{ route('mypage.index') }}" class="btn btn-outline-primary">マイページへ</a>
         </div>
     @endauth
 
@@ -33,7 +31,7 @@
         <input
             type="text"
             name="keyword"
-            value="{{ old('keyword', $keyword) }}"
+            value="{{ old('keyword') ?? $keyword }}"
             placeholder="商品名で検索"
             class="form-control w-100 w-md-50"
             autocomplete="off"
@@ -42,7 +40,6 @@
     </form>
 
     @php
-        // 安全のため isset チェック
         $likedItemIds = $likedItemIds ?? [];
     @endphp
 
@@ -51,20 +48,31 @@
     @else
         <div class="row">
             @foreach ($items as $item)
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100">
-                        <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
-                            @if ($item->img_url)
-                                <img src="{{ asset($item->img_url) }}" class="card-img-top" alt="{{ $item->name }}" style="height: 180px; object-fit: cover;">
-                            @else
-                                <img src="{{ asset('no-image.png') }}" class="card-img-top" alt="no image" style="height: 180px; object-fit: cover;">
-                            @endif
-                        </a>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        @if ($item->is_sold)
+                            {{-- 売り切れ商品の場合はリンクを無効にしてグレースタイル --}}
+                            <div style="opacity: 0.6; pointer-events: none;">
+                                <img src="{{ asset($item->img_url ?: 'no-image.png') }}"
+                                     class="card-img-top"
+                                     alt="{{ $item->name }}"
+                                     style="height: 180px; object-fit: cover;">
+                            </div>
+                        @else
+                            <a href="{{ route('items.show', ['item_id' => $item->id]) }}">
+                                <img src="{{ asset($item->img_url ?: 'no-image.png') }}"
+                                     class="card-img-top"
+                                     alt="{{ $item->name }}"
+                                     style="height: 180px; object-fit: cover;">
+                            </a>
+                        @endif
+
                         <div class="card-body">
-                            <h5 class="card-title">{{ $item->name }}</h5>
+                            <h5 class="card-title text-truncate">{{ $item->name }}</h5>
+                            <p class="card-text mb-2">¥{{ number_format($item->price) }}</p>
 
                             {{-- 商品ステータス --}}
-                            @if ($item->buyers->isNotEmpty())
+                            @if ($item->is_sold)
                                 <span class="badge bg-danger">Sold</span>
                             @else
                                 <span class="badge bg-success">販売中</span>

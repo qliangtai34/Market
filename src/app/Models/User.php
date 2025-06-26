@@ -6,7 +6,9 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // API認証が必要な場合のみ
+use Laravel\Sanctum\HasApiTokens;
+use App\Models\Item;
+use App\Models\Comment;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -19,6 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'address', // 住所も明示しておくとベター（バリデーションや登録時に必要なため）
     ];
 
     /**
@@ -57,12 +60,16 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function purchases()
     {
-        return $this->belongsToMany(Item::class, 'purchase_items')->withTimestamps();
+        return $this->belongsToMany(Item::class, 'purchase_items')
+                    ->withTimestamps()
+                    ->withPivot('address', 'purchased_at');
     }
 
+    /**
+     * コメント（1対多）
+     */
     public function comments()
-{
-    return $this->hasMany(Comment::class);
-}
-
+    {
+        return $this->hasMany(Comment::class);
+    }
 }
