@@ -43,18 +43,11 @@ class Item extends Model
 
     /**
      * いいねしたユーザー（多対多）
+     * likes テーブルを使用
      */
     public function likedUsers()
     {
         return $this->belongsToMany(User::class, 'likes')->withTimestamps();
-    }
-
-    /**
-     * likes() メソッド（別名アクセス対応）
-     */
-    public function likes()
-    {
-        return $this->likedUsers();
     }
 
     /**
@@ -67,6 +60,7 @@ class Item extends Model
 
     /**
      * 商品カテゴリ（多対多）
+     * item_category 中間テーブル使用
      */
     public function categories()
     {
@@ -74,7 +68,8 @@ class Item extends Model
     }
 
     /**
-     * 購入者（多対多）purchase_items テーブル経由
+     * 購入者（多対多）
+     * purchase_items 中間テーブル使用
      */
     public function buyers()
     {

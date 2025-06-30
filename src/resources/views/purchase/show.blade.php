@@ -11,6 +11,10 @@
         <p>価格: ¥{{ number_format($item->price) }}</p>
         <p>送付先住所: {{ $address }}</p>
     </div>
+    
+    <a href="{{ route('purchase.address.edit', ['item_id' => $item->id]) }}" class="btn btn-outline-secondary mt-3">
+    配送先を変更する
+    </a>
 
     <form method="POST" action="{{ route('purchase.process', $item->id) }}">
         @csrf

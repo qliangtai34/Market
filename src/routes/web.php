@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| ▼ ログイン済み ＆ メール認証済み
+| ▼ ログイン済み & メール認証済み
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -62,12 +62,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 商品購入画面
     Route::get('/purchase/{item_id}', [PurchaseController::class, 'show'])->name('purchase.show');
 
-    // 商品購入処理（Stripe支払い）
+    // 商品購入処理（Stripe）
     Route::post('/purchase/{item_id}', [PurchaseController::class, 'process'])->name('purchase.process');
 
     // 配送先住所編集・更新
     Route::get('/purchase/address/{item_id}', [PurchaseController::class, 'editAddress'])->name('purchase.address.edit');
-    Route::post('/purchase/address/{item_id}', [PurchaseController::class, 'updateAddress'])->name('purchase.address.update');
+    Route::put('/purchase/address/{item_id}', [PurchaseController::class, 'updateAddress'])->name('purchase.address.update');
 
     // 商品出品
     Route::get('/sell', [SellController::class, 'create'])->name('sell.create');
@@ -80,22 +80,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // マイページ（購入・出品商品一覧）
     Route::get('/mypage', [ProfileController::class, 'index'])->name('mypage.index');
 
-    // 任意：ユーザーダッシュボード
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    // 任意：ダッシュボード
+    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| ▼ Stripe Webhook（支払い完了通知）
+| ▼ Stripe Webhook（非認証）
 |--------------------------------------------------------------------------
 */
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 
 /*
 |--------------------------------------------------------------------------
-| ▼ Stripe決済完了後の画面（未ログイン状態でも遷移可能）
+| ▼ Stripe決済結果表示（未ログインでも遷移可能）
 |--------------------------------------------------------------------------
 */
 Route::get('/purchase/success', [PurchaseController::class, 'success'])->name('purchase.success');

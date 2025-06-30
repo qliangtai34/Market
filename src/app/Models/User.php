@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+
 use App\Models\Item;
 use App\Models\Comment;
+use App\Models\Profile;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -21,7 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'address', // 住所も明示しておくとベター（バリデーションや登録時に必要なため）
+        // 'address', // usersテーブルにaddressカラムがなければコメントアウトまたは削除
     ];
 
     /**
@@ -44,7 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function items()
     {
-        return $this->hasMany(Item::class, 'user_id');
+        return $this->hasMany(Item::class);
     }
 
     /**
@@ -60,7 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function purchases()
     {
-        return $this->belongsToMany(Item::class, 'purchase_items')
+        return $this->belongsToMany(Item::class, 'purchase_items', 'user_id', 'item_id')
                     ->withTimestamps()
                     ->withPivot('address', 'purchased_at');
     }
@@ -71,5 +73,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * プロフィール（1対1）
+     */
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
     }
 }

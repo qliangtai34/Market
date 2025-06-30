@@ -13,6 +13,7 @@ use Stripe\Checkout\Session as StripeSession;
 
 class PurchaseController extends Controller
 {
+    // 購入確認画面
     public function show($item_id)
     {
         $item = Item::findOrFail($item_id);
@@ -21,12 +22,11 @@ class PurchaseController extends Controller
             return redirect()->route('items.index')->with('error', 'この商品はすでに売り切れました。');
         }
 
-        $user = Auth::user();
-        $address = $user->address ?? '未登録';
-
+        $address = Auth::user()->address ?? '未登録';
         return view('purchase.show', compact('item', 'address'));
     }
 
+    // Stripe決済処理
     public function process(Request $request, $item_id)
     {
         \Log::info("✅ process() 呼び出し: item_id={$item_id}");
@@ -43,18 +43,16 @@ class PurchaseController extends Controller
         }
 
         Stripe::setApiKey(config('services.stripe.secret'));
-        $payment_methods = $request->payment_method === 'convenience' ? ['konbini'] : ['card'];
+        $paymentMethods = $request->payment_method === 'convenience' ? ['konbini'] : ['card'];
 
         try {
             $session = StripeSession::create([
-                'payment_method_types' => $payment_methods,
+                'payment_method_types' => $paymentMethods,
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'jpy',
-                        'product_data' => [
-                            'name' => $item->name,
-                        ],
-                        'unit_amount' => $item->price, // ¥であれば1円単位でOK（JPYは少数なし）
+                        'product_data' => ['name' => $item->name],
+                        'unit_amount' => $item->price,
                     ],
                     'quantity' => 1,
                 ]],
@@ -74,6 +72,7 @@ class PurchaseController extends Controller
         }
     }
 
+    // 購入成功後の処理
     public function success(Request $request)
     {
         $session_id = $request->query('session_id');
@@ -84,7 +83,7 @@ class PurchaseController extends Controller
         Stripe::setApiKey(config('services.stripe.secret'));
 
         try {
-            $session = \Stripe\Checkout\Session::retrieve($session_id);
+            $session = StripeSession::retrieve($session_id);
         } catch (\Exception $e) {
             Log::error('セッション取得失敗: ' . $e->getMessage());
             return redirect()->route('items.index')->with('error', 'セッション取得に失敗しました。');
@@ -103,46 +102,46 @@ class PurchaseController extends Controller
 
             Log::info("✅ 購入処理開始: item_id={$item_id}, user_id={$user_id}");
 
-            if ($item->is_sold) {
-                Log::info("⚠️ 商品はすでに売却済み");
-                return view('purchase.success', compact('item'));
-            }
-
-            if (!$item->buyers()->where('user_id', $user_id)->exists()) {
-                $item->buyers()->attach($user_id, [
-                    'address' => $user->address,
-                    'purchased_at' => now(),
-                ]);
-                Log::info("✅ attach 成功: user_id={$user_id}");
+            if (!$item->is_sold) {
+                if (!$item->buyers()->where('user_id', $user_id)->exists()) {
+                    $item->buyers()->attach($user_id, [
+                        'address' => $user->address,
+                        'purchased_at' => now(),
+                    ]);
+                    Log::info("✅ attach 成功: user_id={$user_id}");
+                }
 
                 $item->is_sold = true;
-                $saveResult = $item->save();
-                Log::info("✅ is_sold 保存結果: " . ($saveResult ? '成功' : '失敗'));
+                $item->save();
+                Log::info("✅ 商品ステータス更新（is_sold=true）");
             } else {
-                Log::info("⚠️ すでにこのユーザーは購入済み");
+                Log::info("⚠️ 商品はすでに売却済み");
             }
+
+            return view('purchase.success', compact('item'));
+
         } catch (\Exception $e) {
             Log::error('購入処理エラー: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
             return redirect()->route('items.index')->with('error', '購入処理中にエラーが発生しました。');
         }
-
-        return view('purchase.success', compact('item'));
     }
 
+    // キャンセル表示
     public function cancel()
     {
         return view('purchase.cancel');
     }
 
+    // 配送先編集画面表示
     public function editAddress($item_id)
     {
         $item = Item::findOrFail($item_id);
-        $user = Auth::user();
+        $address = Auth::user()->address ?? '';
 
-        return view('purchase.address', compact('item', 'user'));
+        return view('purchase.edit_address', compact('item', 'address'));
     }
 
+    // 配送先更新処理
     public function updateAddress(Request $request, $item_id)
     {
         $request->validate([
