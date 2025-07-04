@@ -89,15 +89,15 @@ class ItemController extends Controller
     {
         $item = Item::with([
             'categories',
-            'likes',
+            'likedUsers',    // 変更
             'comments.user',
         ])
-        ->withCount(['likes', 'comments'])
+        ->withCount(['likedUsers', 'comments'])  // 変更
         ->findOrFail($item_id);
 
         $liked = false;
         if (Auth::check()) {
-            $liked = $item->likes->contains('user_id', Auth::id());
+            $liked = $item->likedUsers->contains('id', Auth::id());  // 変更
         }
 
         return view('items.show', compact('item', 'liked'));
@@ -111,10 +111,10 @@ class ItemController extends Controller
         $item = Item::findOrFail($item_id);
         $user = Auth::user();
 
-        if ($item->likes()->where('user_id', $user->id)->exists()) {
-            $item->likes()->detach($user->id);
+        if ($item->likedUsers()->where('user_id', $user->id)->exists()) {  // 変更
+            $item->likedUsers()->detach($user->id);  // 変更
         } else {
-            $item->likes()->attach($user->id);
+            $item->likedUsers()->attach($user->id);  // 変更
         }
 
         return back();

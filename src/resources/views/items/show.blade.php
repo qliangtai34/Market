@@ -21,11 +21,12 @@
                         @csrf
                         <button type="submit" class="btn btn-link p-0" title="いいねする／取り消す" aria-label="いいね">
                             <i class="bi bi-heart{{ $liked ? '-fill text-danger' : '' }}"></i>
-                            <span class="ms-1">{{ $item->likes_count }}</span>
+                            <span class="ms-1">{{ $item->liked_users_count }}</span>
                         </button>
                     </form>
                 @else
-                    <i class="bi bi-heart"></i> <span class="ms-1">{{ $item->likes_count }}</span>
+                    <i class="bi bi-heart"></i>
+                    <span class="ms-1">{{ $item->liked_users_count }}</span>
                     <small class="text-muted">(いいねするにはログインが必要です)</small>
                 @endauth
 
