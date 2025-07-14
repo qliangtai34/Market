@@ -23,6 +23,7 @@ class Item extends Model
         'condition',
         'user_id',    // 出品者ID
         'is_sold',    // 購入済みフラグ
+        'brand',      // ブランド名
     ];
 
     /**
@@ -43,15 +44,15 @@ class Item extends Model
 
     /**
      * いいねしたユーザー（多対多）
-     * likes テーブルを使用
      */
     public function likedUsers()
     {
-        return $this->belongsToMany(User::class, 'likes')->withTimestamps();
+        return $this->belongsToMany(User::class, 'likes')
+                    ->withTimestamps();
     }
 
     /**
-     * コメント（1対多）
+     * コメント一覧（1対多）
      */
     public function comments()
     {
@@ -60,16 +61,15 @@ class Item extends Model
 
     /**
      * 商品カテゴリ（多対多）
-     * item_category 中間テーブル使用
      */
     public function categories()
     {
-        return $this->belongsToMany(Category::class, 'item_category')->withTimestamps();
+        return $this->belongsToMany(Category::class, 'item_category')
+                    ->withTimestamps();
     }
 
     /**
-     * 購入者（多対多）
-     * purchase_items 中間テーブル使用
+     * 購入者（多対多）＋中間テーブル情報
      */
     public function buyers()
     {

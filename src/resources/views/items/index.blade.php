@@ -7,14 +7,31 @@
 
         @auth
             @php
-                $queryParams = ['keyword' => $keyword];
+                // URLクエリパラメータの構築
+                $queryParams = [];
+
+                if (!empty($keyword)) {
+                    $queryParams['keyword'] = $keyword;
+                }
+
+                if ($mode === 'mylist') {
+                    // 商品一覧へ戻るとき（pageパラメータなし）
+                    $listUrl = route('items.index', $queryParams);
+                    $listLabel = '商品一覧へ';
+                    $btnClass = 'btn-outline-secondary';
+                } else {
+                    // マイリストへ遷移するとき（page=mylistを追加）
+                    $queryParams['page'] = 'mylist';
+                    $listUrl = route('items.index', $queryParams);
+                    $listLabel = 'マイリスト';
+                    $btnClass = 'btn-outline-primary';
+                }
             @endphp
+
             <div class="mt-2 mt-md-0 d-flex gap-2">
-                @if ($mode === 'mylist')
-                    <a href="{{ route('items.index', $queryParams) }}" class="btn btn-outline-secondary">商品一覧へ</a>
-                @else
-                    <a href="{{ route('items.mylist', $queryParams) }}" class="btn btn-outline-primary">マイリスト</a>
-                @endif
+                <a href="{{ $listUrl }}" class="btn {{ $btnClass }}">
+                    {{ $listLabel }}
+                </a>
 
                 <a href="{{ route('sell.create') }}" class="btn btn-success">商品出品</a>
             </div>
@@ -28,18 +45,21 @@
     @endauth
 
     {{-- 検索フォーム --}}
-    <form method="GET" action="{{ $mode === 'mylist' ? route('items.mylist') : route('items.index') }}" class="mb-4 row g-2">
+    <form method="GET" action="{{ route('items.index') }}" class="mb-4 row g-2">
         <div class="col-12 col-md-8">
             <input
                 type="text"
                 name="keyword"
-                value="{{ old('keyword') ?? $keyword }}"
+                value="{{ old('keyword', $keyword) }}"
                 placeholder="商品名で検索"
                 class="form-control"
                 autocomplete="off"
             >
         </div>
         <div class="col-12 col-md-4">
+            @if ($mode === 'mylist')
+                <input type="hidden" name="page" value="mylist">
+            @endif
             <button type="submit" class="btn btn-primary w-100">検索</button>
         </div>
     </form>

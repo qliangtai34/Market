@@ -1,29 +1,32 @@
 <?php
 
-// database/migrations/xxxx_xx_xx_create_purchase_items_table.php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePurchaseItemsTable extends Migration
-{
-    public function up()
+return new class extends Migration {
+    public function up(): void
     {
         Schema::create('purchase_items', function (Blueprint $table) {
             $table->id();
+
+            // 外部キー制約付きのリレーション
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            $table->string('address')->nullable();  // 住所カラムを追加
-            $table->timestamp('purchased_at')->nullable();  // 購入日時カラムを追加
+
+            // 購入時の住所と購入日時
+            $table->string('address')->nullable();
+            $table->timestamp('purchased_at')->nullable();
+
             $table->timestamps();
 
-            $table->unique(['user_id', 'item_id']);  // ユーザーと商品で重複購入不可など
+            // 重複購入を防ぐユニーク制約（1ユーザー1商品）
+            $table->unique(['user_id', 'item_id']);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('purchase_items');
     }
-}
+};

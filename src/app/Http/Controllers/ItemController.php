@@ -9,75 +9,64 @@ use App\Models\Item;
 class ItemController extends Controller
 {
     /**
-     * トップページ表示（商品一覧）
+     * トップページ表示（商品一覧 or マイリスト）
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
         $keyword = $request->input('keyword', '');
+        $page = $request->query('page'); // 'mylist' の場合に切り替え
 
-        $query = Item::query();
+        // 初期化
+        $items = collect();
+        $likedItemIds = [];
 
-        // ログインユーザーの出品商品を除外
-        if (Auth::check()) {
-            $query->where('user_id', '!=', Auth::id());
+        // ▼ マイリスト（いいね一覧）
+        if ($page === 'mylist') {
+            if (!$user) {
+                return redirect()->route('login');
+            }
+
+            $likedItems = $user->likes()->with('buyers')->latest()->get();
+
+            // 検索キーワードで絞り込み
+            if (!empty($keyword)) {
+                $likedItems = $likedItems->filter(function ($item) use ($keyword) {
+                    return str_contains($item->name, $keyword);
+                });
+            }
+
+            $items = $likedItems;
+            $likedItemIds = $items->pluck('id')->toArray();
+
+            return view('items.index', [
+                'items' => $items,
+                'keyword' => $keyword,
+                'mode' => 'mylist',
+                'likedItemIds' => $likedItemIds,
+            ]);
         }
 
-        // 商品名による部分一致検索
+        // ▼ 通常の商品一覧
+        $query = Item::query()->with('buyers');
+
+        // ログインユーザーの出品商品を除外
+        if ($user) {
+            $query->where('user_id', '!=', $user->id);
+        }
+
+        // 検索キーワード
         if (!empty($keyword)) {
             $query->where('name', 'like', '%' . $keyword . '%');
         }
 
-        $items = $query->with('buyers')->latest()->get();
-
-        // ログインユーザーのいいね商品 ID を取得（表示用バッジに使用）
-        $likedItemIds = Auth::check()
-            ? Auth::user()->likes()->pluck('item_id')->toArray()
-            : [];
+        $items = $query->latest()->get();
+        $likedItemIds = $user ? $user->likes()->pluck('item_id')->toArray() : [];
 
         return view('items.index', [
             'items' => $items,
             'keyword' => $keyword,
             'mode' => 'all',
-            'likedItemIds' => $likedItemIds,
-        ]);
-    }
-
-    /**
-     * マイリスト表示（いいねした商品）
-     */
-    public function mylist(Request $request)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $user = Auth::user()->load('likes'); // いいね済商品を事前に読み込む
-        $keyword = $request->input('keyword', '');
-
-        $likedItemIds = $user->likes->pluck('id')->toArray();
-
-        // 該当する item_id がない場合、空コレクションを返す
-        if (empty($likedItemIds)) {
-            return view('items.index', [
-                'items' => collect(),
-                'keyword' => $keyword,
-                'mode' => 'mylist',
-                'likedItemIds' => [],
-            ]);
-        }
-
-        $query = Item::whereIn('id', $likedItemIds);
-
-        if (!empty($keyword)) {
-            $query->where('name', 'like', '%' . $keyword . '%');
-        }
-
-        $items = $query->with('buyers')->latest()->get();
-
-        return view('items.index', [
-            'items' => $items,
-            'keyword' => $keyword,
-            'mode' => 'mylist',
             'likedItemIds' => $likedItemIds,
         ]);
     }
@@ -89,16 +78,11 @@ class ItemController extends Controller
     {
         $item = Item::with([
             'categories',
-            'likedUsers',    // 変更
+            'likedUsers',
             'comments.user',
-        ])
-        ->withCount(['likedUsers', 'comments'])  // 変更
-        ->findOrFail($item_id);
+        ])->withCount(['likedUsers', 'comments'])->findOrFail($item_id);
 
-        $liked = false;
-        if (Auth::check()) {
-            $liked = $item->likedUsers->contains('id', Auth::id());  // 変更
-        }
+        $liked = Auth::check() && $item->likedUsers->contains('id', Auth::id());
 
         return view('items.show', compact('item', 'liked'));
     }
@@ -111,11 +95,7 @@ class ItemController extends Controller
         $item = Item::findOrFail($item_id);
         $user = Auth::user();
 
-        if ($item->likedUsers()->where('user_id', $user->id)->exists()) {  // 変更
-            $item->likedUsers()->detach($user->id);  // 変更
-        } else {
-            $item->likedUsers()->attach($user->id);  // 変更
-        }
+        $item->likedUsers()->toggle($user->id); // toggleで簡潔に
 
         return back();
     }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Models\Item;
 use App\Models\User;
+use App\Models\Profile;
 use Stripe\Stripe;
 use Stripe\Checkout\Session as StripeSession;
 
@@ -17,12 +18,18 @@ class PurchaseController extends Controller
     public function show($item_id)
     {
         $item = Item::findOrFail($item_id);
+        $user = Auth::user();
 
         if ($item->is_sold) {
             return redirect()->route('items.index')->with('error', 'この商品はすでに売り切れました。');
         }
 
-        $address = Auth::user()->address ?? '未登録';
+        $buyer = $item->buyers()->where('user_id', $user->id)->first();
+        $pivot = $buyer ? $buyer->pivot : null;
+
+        $profile = $user->profile;
+        $address = ($pivot && $pivot->address) ? $pivot->address : (($profile && $profile->address) ? $profile->address : '未登録');
+
         return view('purchase.show', compact('item', 'address'));
     }
 
@@ -100,22 +107,29 @@ class PurchaseController extends Controller
             $item = Item::findOrFail($item_id);
             $user = User::findOrFail($user_id);
 
+            $buyer = $item->buyers()->where('user_id', $user_id)->first();
+            $pivot = $buyer ? $buyer->pivot : null;
+
+            $profile = $user->profile;
+            $address = ($pivot && $pivot->address) ? $pivot->address : (($profile && $profile->address) ? $profile->address : '未登録');
+
             Log::info("✅ 購入処理開始: item_id={$item_id}, user_id={$user_id}");
 
             if (!$item->is_sold) {
-                if (!$item->buyers()->where('user_id', $user_id)->exists()) {
+                if (!$pivot) {
                     $item->buyers()->attach($user_id, [
-                        'address' => $user->address,
+                        'address' => $address,
                         'purchased_at' => now(),
                     ]);
-                    Log::info("✅ attach 成功: user_id={$user_id}");
+                } else {
+                    $item->buyers()->updateExistingPivot($user_id, [
+                        'address' => $address,
+                        'purchased_at' => now(),
+                    ]);
                 }
 
                 $item->is_sold = true;
                 $item->save();
-                Log::info("✅ 商品ステータス更新（is_sold=true）");
-            } else {
-                Log::info("⚠️ 商品はすでに売却済み");
             }
 
             return view('purchase.success', compact('item'));
@@ -136,23 +150,39 @@ class PurchaseController extends Controller
     public function editAddress($item_id)
     {
         $item = Item::findOrFail($item_id);
-        $address = Auth::user()->address ?? '';
+        $user = Auth::user();
+
+        $buyer = $item->buyers()->where('user_id', $user->id)->first();
+        $pivot = $buyer ? $buyer->pivot : null;
+
+        $profile = $user->profile;
+        $address = ($pivot && $pivot->address) ? $pivot->address : (($profile && $profile->address) ? $profile->address : '');
 
         return view('purchase.edit_address', compact('item', 'address'));
     }
 
-    // 配送先更新処理
+    // 配送先更新処理（purchase_items テーブルに保存）
     public function updateAddress(Request $request, $item_id)
     {
         $request->validate([
             'address' => 'required|string|max:255',
         ]);
 
+        $item = Item::findOrFail($item_id);
         $user = Auth::user();
-        $user->address = $request->address;
-        $user->save();
 
-        return redirect()->route('purchase.show', ['item_id' => $item_id])
-                         ->with('success', '住所が更新されました。');
+        if ($item->buyers()->where('user_id', $user->id)->exists()) {
+            $item->buyers()->updateExistingPivot($user->id, [
+                'address' => $request->address,
+            ]);
+        } else {
+            $item->buyers()->attach($user->id, [
+                'address' => $request->address,
+                'purchased_at' => null,
+            ]);
+        }
+
+        return redirect()->route('purchase.show', $item->id)
+                         ->with('success', '配送先住所が更新されました。');
     }
 }

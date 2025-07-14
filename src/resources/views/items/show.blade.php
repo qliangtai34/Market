@@ -11,7 +11,12 @@
         {{-- 商品情報 --}}
         <div class="col-md-6">
             <h2>{{ $item->name }}</h2>
-            <p><strong>ブランド:</strong> {{ $item->brand }}</p>
+
+            {{-- ブランド名 --}}
+            @if (!empty($item->brand))
+                <p><strong>ブランド:</strong> {{ $item->brand }}</p>
+            @endif
+
             <p><strong>価格:</strong> ¥{{ number_format($item->price) }}</p>
 
             {{-- いいねとコメント数 --}}
@@ -19,7 +24,7 @@
                 @auth
                     <form action="{{ route('items.like', ['item_id' => $item->id]) }}" method="POST" class="d-inline">
                         @csrf
-                        <button type="submit" class="btn btn-link p-0" title="いいねする／取り消す" aria-label="いいね">
+                        <button type="submit" class="btn btn-link p-0 align-baseline" title="いいねする／取り消す" aria-label="いいね">
                             <i class="bi bi-heart{{ $liked ? '-fill text-danger' : '' }}"></i>
                             <span class="ms-1">{{ $item->liked_users_count }}</span>
                         </button>
@@ -27,7 +32,7 @@
                 @else
                     <i class="bi bi-heart"></i>
                     <span class="ms-1">{{ $item->liked_users_count }}</span>
-                    <small class="text-muted">(いいねするにはログインが必要です)</small>
+                    <small class="text-muted">(いいねにはログインが必要です)</small>
                 @endauth
 
                 <i class="bi bi-chat-left-text ms-3" title="コメント数"></i>
@@ -39,9 +44,11 @@
 
             {{-- カテゴリ・状態 --}}
             <p><strong>カテゴリ:</strong>
-                @foreach ($item->categories as $category)
+                @forelse ($item->categories as $category)
                     <span class="badge bg-secondary">{{ $category->name }}</span>
-                @endforeach
+                @empty
+                    <span class="text-muted">カテゴリ未設定</span>
+                @endforelse
             </p>
             <p><strong>状態:</strong> {{ $item->condition }}</p>
 
@@ -60,7 +67,7 @@
 
     <hr>
 
-    {{-- コメント表示 --}}
+    {{-- コメント一覧 --}}
     <div class="mt-4">
         <h4>コメント（{{ $item->comments_count }}件）</h4>
         @forelse ($item->comments as $comment)
@@ -73,7 +80,7 @@
         @endforelse
     </div>
 
-    {{-- コメント投稿フォーム --}}
+    {{-- コメント投稿 --}}
     @auth
         <div class="mt-4">
             <form action="{{ route('items.comment', ['item_id' => $item->id]) }}" method="POST">

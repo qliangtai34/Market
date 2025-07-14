@@ -24,6 +24,7 @@
 
     <form action="{{ route('purchase.address.update', ['item_id' => $item->id]) }}" method="POST">
         @csrf
+        @method('PUT') {{-- ここが重要！ --}}
 
         <div class="mb-3">
             <label for="address" class="form-label">住所</label>

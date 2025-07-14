@@ -23,6 +23,12 @@
             <input type="text" name="name" class="form-control" id="name" value="{{ old('name') }}" required>
         </div>
 
+        {{-- 追加部分：ブランド名 --}}
+        <div class="mb-3">
+            <label for="brand" class="form-label">ブランド名</label>
+            <input type="text" name="brand" class="form-control" id="brand" value="{{ old('brand') }}" required>
+        </div>
+
         <div class="mb-3">
             <label for="price" class="form-label">価格（円）</label>
             <input type="number" name="price" class="form-control" id="price" value="{{ old('price') }}" min="1" max="300000" required>

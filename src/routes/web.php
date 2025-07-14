@@ -15,7 +15,7 @@ use App\Http\Controllers\StripeWebhookController;
 |--------------------------------------------------------------------------
 */
 
-// 商品一覧（トップページ）+ 検索
+// 商品一覧（トップページ）+ 検索 + マイリスト（?page=mylist）
 Route::get('/', [ItemController::class, 'index'])->name('items.index');
 
 // 商品詳細ページ
@@ -37,9 +37,6 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 */
 Route::middleware('auth')->group(function () {
 
-    // マイリスト（いいねした商品一覧）
-    Route::get('/mylist', [ItemController::class, 'mylist'])->name('items.mylist');
-
     // 商品へのいいね（トグル）
     Route::post('/item/{item_id}/like', [ItemController::class, 'toggleLike'])->name('items.like');
 
@@ -59,10 +56,8 @@ Route::middleware('auth')->group(function () {
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // 商品購入画面
+    // 商品購入画面・処理
     Route::get('/purchase/{item_id}', [PurchaseController::class, 'show'])->name('purchase.show');
-
-    // 商品購入処理（Stripe）
     Route::post('/purchase/{item_id}', [PurchaseController::class, 'process'])->name('purchase.process');
 
     // 配送先住所編集・更新
@@ -77,10 +72,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mypage/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/mypage/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // マイページ（購入・出品商品一覧）
+    // マイページ（出品・購入商品）
     Route::get('/mypage', [ProfileController::class, 'index'])->name('mypage.index');
 
-    // 任意：ダッシュボード
+    // 任意：ダッシュボード（使う場合のみ）
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 

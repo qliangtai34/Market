@@ -18,7 +18,14 @@
         <a href="{{ route('profile.edit') }}" class="btn btn-sm btn-outline-primary mt-3">プロフィール編集</a>
     </div>
 
+    {{-- 表示切り替えタブ --}}
+    <div class="mb-4">
+        <a href="{{ route('mypage.index', ['page' => 'sell']) }}" class="btn btn-outline-secondary me-2 {{ $mode === 'sell' ? 'active' : '' }}">出品した商品</a>
+        <a href="{{ route('mypage.index', ['page' => 'buy']) }}" class="btn btn-outline-secondary {{ $mode === 'buy' ? 'active' : '' }}">購入した商品</a>
+    </div>
+
     {{-- 出品した商品 --}}
+    @if ($mode === 'sell' || is_null($mode))
     <div class="mb-5">
         <h2>出品した商品</h2>
         <div class="row">
@@ -32,8 +39,10 @@
             @endforelse
         </div>
     </div>
+    @endif
 
     {{-- 購入した商品 --}}
+    @if ($mode === 'buy' || is_null($mode))
     <div>
         <h2>購入した商品</h2>
         <div class="row">
@@ -47,5 +56,6 @@
             @endforelse
         </div>
     </div>
+    @endif
 </div>
 @endsection
