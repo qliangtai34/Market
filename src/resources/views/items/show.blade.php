@@ -20,24 +20,29 @@
             <p><strong>価格:</strong> ¥{{ number_format($item->price) }}</p>
 
             {{-- いいねとコメント数 --}}
-            <p>
-                @auth
-                    <form action="{{ route('items.like', ['item_id' => $item->id]) }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-link p-0 align-baseline" title="いいねする／取り消す" aria-label="いいね">
-                            <i class="bi bi-heart{{ $liked ? '-fill text-danger' : '' }}"></i>
-                            <span class="ms-1">{{ $item->liked_users_count }}</span>
-                        </button>
-                    </form>
-                @else
-                    <i class="bi bi-heart"></i>
-                    <span class="ms-1">{{ $item->liked_users_count }}</span>
-                    <small class="text-muted">(いいねにはログインが必要です)</small>
-                @endauth
+<p>
+    @auth
+        <form action="{{ route('items.like', ['item_id' => $item->id]) }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-link p-0 align-baseline" title="いいねする／取り消す" aria-label="いいね">
+                {{-- いいね：★か☆ --}}
+                <span style="font-size: 1.2rem;">
+                    {{ $liked ? '★' : '☆' }}
+                </span>
+                <span class="ms-1">{{ $item->liked_users_count }}</span>
+            </button>
+        </form>
+    @else
+        <span style="font-size: 1.2rem;">☆</span>
+        <span class="ms-1">{{ $item->liked_users_count }}</span>
+        <small class="text-muted">(いいねにはログインが必要です)</small>
+    @endauth
 
-                <i class="bi bi-chat-left-text ms-3" title="コメント数"></i>
-                <span class="ms-1">{{ $item->comments_count }}</span>
-            </p>
+    {{-- コメントアイコン（💭） --}}
+    <span class="ms-3" title="コメント数" style="font-size: 1.2rem;">💭</span>
+    <span class="ms-1">{{ $item->comments_count }}</span>
+</p>
+
 
             {{-- 商品説明 --}}
             <p>{{ $item->description }}</p>
