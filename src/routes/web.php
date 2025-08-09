@@ -93,3 +93,4 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 */
 Route::get('/purchase/success', [PurchaseController::class, 'success'])->name('purchase.success');
 Route::get('/purchase/cancel', [PurchaseController::class, 'cancel'])->name('purchase.cancel');
+
